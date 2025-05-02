@@ -27,8 +27,8 @@ collection = chroma_client.get_or_create_collection(
 
 # Set page config
 st.set_page_config(
-    page_title="Data Fusion Agent",
-    page_icon="🤖",
+    page_title="Ag Data Fusion Agent",
+    page_icon="🌾",
     layout="wide"
 )
 
