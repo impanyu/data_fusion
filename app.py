@@ -108,7 +108,7 @@ def process_text(text, source="chat"):
         return False
 
 # File upload section
-uploaded_file = st.file_uploader("Upload a file", type=["txt", "md", "csv", "json"])
+uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
 if uploaded_file is not None:
     if process_file(uploaded_file):
         st.success("File processed and stored successfully!")
@@ -155,7 +155,7 @@ if prompt := st.chat_input("Ask me anything..."):
         
         # Stream the response
         for response in client.chat.completions.create(
-            model="gpt-4-turbo-preview",
+            model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
                 {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
