@@ -76,7 +76,7 @@ st.markdown("""
     }
     
     /* Chat input container styling */
-    .chat-input-container {
+    .chat-container {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -84,6 +84,17 @@ st.markdown("""
         background: white;
         padding: 1rem 3rem;
         border-top: 1px solid #e5e7eb;
+        z-index: 1000;
+    }
+    
+    /* Add padding at the bottom of the main content to prevent overlap */
+    .main {
+        padding-bottom: 100px !important;
+    }
+    
+    /* Style the + button */
+    .stButton > button {
+        margin-top: 0.5rem;
     }
     
     /* Input box styling */
@@ -154,6 +165,14 @@ def update_summary_bar():
 # Initial display of summary bar
 update_summary_bar()
 
+# Main content area
+st.markdown("<!-- Chat content -->", unsafe_allow_html=True)
+
+# Display chat messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
 # Create columns for the input area
 col1, col2 = st.columns([1, 11])
 
@@ -216,16 +235,17 @@ with col2:
         # Store the assistant's response
         #process_text(data_collection, full_response, "assistant_response")
 
-# Handle file upload when + button is clicked
+# File upload handling
 if st.session_state.get("add_button"):
     st.session_state.show_file_upload = True
     st.rerun()
 
 # File upload section
-uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
-if uploaded_file is not None:
-    result = process_file(data_collection, uploaded_file)
-    if isinstance(result, tuple):  # Error occurred
-        st.error(f"Error processing file: {result[1]}")
-    elif result:
-        st.success("File processed and stored successfully!")
+if st.session_state.get("show_file_upload", False):
+    uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
+    if uploaded_file is not None:
+        result = process_file(data_collection, uploaded_file)
+        if isinstance(result, tuple):  # Error occurred
+            st.error(f"Error processing file: {result[1]}")
+        elif result:
+            st.success("File processed and stored successfully!")
