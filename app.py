@@ -18,8 +18,9 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Initialize database manager (replaces previous ChromaDB initialization)
 db_manager = DBManager(persist_dir="./vector_db")
-collection = db_manager.data_store
-frontend_tool_collection = db_manager.frontend_tool
+data_collection = db_manager.get_collection("data_store")
+frontend_tool_collection = db_manager.get_collection("frontend_tool")
+
 
 # Set page config
 st.set_page_config(
@@ -117,7 +118,7 @@ update_summary_bar()
 # File upload section
 uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
 if uploaded_file is not None:
-    result = process_file(collection, uploaded_file)
+    result = process_file(data_collection, uploaded_file)
     if isinstance(result, tuple):  # Error occurred
         st.error(f"Error processing file: {result[1]}")
     elif result:
@@ -130,13 +131,13 @@ if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     update_summary_bar()
     
     # Process and store the user's input
-    process_text(collection, prompt, "chat")
+    process_text(data_collection, prompt, "chat")
     
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     # Get relevant context from ChromaDB
-    results = collection.query(
+    results = data_collection.query(
         query_texts=[prompt],
         n_results=5,
         include=["documents", "metadatas", "distances"]
@@ -177,4 +178,4 @@ if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     # Store the assistant's response
-    process_text(collection, full_response, "assistant_response")
+    process_text(data_collection, full_response, "assistant_response")
