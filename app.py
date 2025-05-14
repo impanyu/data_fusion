@@ -56,27 +56,26 @@ st.markdown("""
 # Initialize session state
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "last_prompt" not in st.session_state:
-    st.session_state.last_prompt = ""
+if "current_task" not in st.session_state:
+    st.session_state.current_task = ""
 
-# Add summary bar at the top
-if st.session_state.last_prompt:
-    st.markdown(
-        f"""
-        <style>
-        .summary-bar {{
-            background-color: #f0f2f6;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            border-left: 4px solid #4CAF50;
-        }}
-        </style>
-        <div class="summary-bar">
-        <strong>Last Query:</strong> {st.session_state.last_prompt}</div>
-        """,
-        unsafe_allow_html=True
-    )
+# Always show summary bar at the top
+st.markdown(
+    f"""
+    <style>
+    .summary-bar {{
+        background-color: #f0f2f6;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #4CAF50;
+    }}
+    </style>
+    <div class="summary-bar">
+    <strong>Current Task:</strong> {st.session_state.current_task}</div>
+    """,
+    unsafe_allow_html=True
+)
 
 def store_data(content, data_type, metadata=None):
     """Store data in ChromaDB with metadata"""
@@ -141,8 +140,9 @@ if uploaded_file is not None:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything...", key="chat_input"):
-    # Update the last prompt in session state
-    st.session_state.last_prompt = prompt
+    # Update the current task immediately
+    st.session_state.current_task = prompt
+    st.rerun()  # This forces Streamlit to rerun and update the display
     
     # Process and store the user's input
     process_text(prompt, "chat")
