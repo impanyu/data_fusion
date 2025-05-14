@@ -101,8 +101,8 @@ def update_summary_bar():
         .summary-bar {{
             background-color: #e8f1ff;  /* Light blue color */
             padding: 1rem;
-            padding-top: 0;
-            padding-bottom: 0;
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
             font-size: 0.9rem;  /* Smaller text size */
