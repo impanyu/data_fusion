@@ -119,41 +119,51 @@ if "current_task" not in st.session_state:
 # Create a placeholder for the summary bar
 summary_placeholder = st.empty()
 
-# Function to update summary bar
-def update_summary_bar():
-    summary_placeholder.markdown(
-        f"""
-        <style>
-        .summary-bar {{
-            background-color: #e8f1ff;  /* Light blue color */
-            padding: 1rem;
-            padding-top: 0.5rem;
-            padding-bottom: 0.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;  /* Smaller text size */
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;  /* Semi-bold */
-            letter-spacing: 0.02em;  /* Slight letter spacing */
-            color: #1E293B;  /* Dark slate color */
-            text-transform: uppercase;  /* Optional: makes it more title-like */
-        }}
-        </style>
-        <div class="summary-bar">
-        {st.session_state.current_task}</div>
-        """,
-        unsafe_allow_html=True
-    )
+# Create a row for summary bar and + button
+col1, col2 = st.columns([11, 1])
 
-# Initial display of summary bar
-update_summary_bar()
+with col1:
+    # Function to update summary bar
+    def update_summary_bar():
+        summary_placeholder.markdown(
+            f"""
+            <style>
+            .summary-bar {{
+                background-color: #e8f1ff;
+                padding: 1rem;
+                padding-top: 0.5rem;
+                padding-bottom: 0.5rem;
+                border-radius: 0.5rem;
+                margin-bottom: 1rem;
+                font-size: 0.9rem;
+                font-family: 'Inter', sans-serif;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                color: #1E293B;
+                text-transform: uppercase;
+            }}
+            </style>
+            <div class="summary-bar">
+            {st.session_state.current_task}</div>
+            """,
+            unsafe_allow_html=True
+        )
 
-# Main content area
-st.markdown("<!-- Chat content -->", unsafe_allow_html=True)
+    # Initial display of summary bar
+    update_summary_bar()
 
+with col2:
+    st.button("➕", key="add_button")
 
-# Add + button above the chat input
-st.button("➕", key="add_button")
+# File upload section
+if st.session_state.get("show_file_upload", False):
+    uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
+    if uploaded_file is not None:
+        result = process_file(data_collection, uploaded_file)
+        if isinstance(result, tuple):  # Error occurred
+            st.error(f"Error processing file: {result[1]}")
+        elif result:
+            st.success("File processed and stored successfully!")
 
 # Chat input (this will automatically stay at the bottom)
 if prompt := st.chat_input("Ask me anything..."):
@@ -215,13 +225,3 @@ if prompt := st.chat_input("Ask me anything..."):
 if st.session_state.get("add_button"):
     st.session_state.show_file_upload = True
     st.rerun()
-
-# File upload section
-if st.session_state.get("show_file_upload", False):
-    uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
-    if uploaded_file is not None:
-        result = process_file(data_collection, uploaded_file)
-        if isinstance(result, tuple):  # Error occurred
-            st.error(f"Error processing file: {result[1]}")
-        elif result:
-            st.success("File processed and stored successfully!")
