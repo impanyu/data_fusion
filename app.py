@@ -8,6 +8,7 @@ import json
 from datetime import datetime
 import uuid
 from text_processor import process_text, process_file  # Import the new functions
+from db_manager import DBManager
 
 # Load environment variables
 load_dotenv()
@@ -15,21 +16,10 @@ load_dotenv()
 # Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
-# Initialize ChromaDB
-chroma_client = chromadb.Client()
-openai_ef = embedding_functions.OpenAIEmbeddingFunction(
-    api_key=os.getenv("OPENAI_API_KEY"),
-    model_name="text-embedding-ada-002"
-)
-collection = chroma_client.get_or_create_collection(
-    name="data_store",
-    embedding_function=openai_ef
-)
-
-frontend_tool_collection = chroma_client.get_or_create_collection(
-    name="frontend_tool",
-    embedding_function=openai_ef
-)
+# Initialize database manager (replaces previous ChromaDB initialization)
+db_manager = DBManager(persist_dir="./vector_db")
+collection = db_manager.data_store
+frontend_tool_collection = db_manager.frontend_tool
 
 # Set page config
 st.set_page_config(
