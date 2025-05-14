@@ -120,7 +120,7 @@ if "current_task" not in st.session_state:
 summary_placeholder = st.empty()
 
 # Create a row for summary bar and + button
-col1, col2 = st.columns([11, 1])
+col1, col2 = st.columns([10, 2])
 
 with col1:
     # Function to update summary bar
