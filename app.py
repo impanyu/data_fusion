@@ -178,4 +178,4 @@ if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     # Store the assistant's response
-    process_text(data_collection, full_response, "assistant_response")
+    #process_text(data_collection, full_response, "assistant_response")
