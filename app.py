@@ -42,7 +42,7 @@ st.markdown("""
     <style>
     /* Reduce default page margins and add border */
     .block-container {
-        padding-top: 3rem;
+        padding-top: 2rem;
         padding-bottom: 3rem;
         padding-left: 3rem;
         padding-right: 3rem;
