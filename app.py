@@ -37,7 +37,7 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for the chat input
+# Custom CSS for the chat input and page height
 st.markdown("""
     <style>
     .stTextInput>div>div>input {
@@ -49,6 +49,17 @@ st.markdown("""
     .stTextInput>div>div>input:focus {
         border-color: #4CAF50;
         box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+    }
+    
+    /* Increase page height */
+    .main {
+        min-height: 100vh;
+    }
+    .stApp {
+        min-height: 100vh;
+    }
+    section[data-testid="stSidebar"] {
+        min-height: 100vh;
     }
     </style>
 """, unsafe_allow_html=True)
