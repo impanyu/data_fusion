@@ -49,7 +49,7 @@ st.markdown("""
     }
     
     /* Set chat message width */
-    div[data-testid="stChatMessageContainer"] {
+    div[data-testid="stBottomBlockContainer"] {
         width: calc(100% - 6rem) !important;
         margin-left: 3rem !important;
         margin-right: 3rem !important;
