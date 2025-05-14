@@ -59,12 +59,12 @@ if "messages" not in st.session_state:
 if "current_task" not in st.session_state:
     st.session_state.current_task = ""
 
-# Create a container for the summary bar
-summary_container = st.container()
+# Create a placeholder for the summary bar
+summary_placeholder = st.empty()
 
 # Function to update summary bar
 def update_summary_bar():
-    summary_container.markdown(
+    summary_placeholder.markdown(
         f"""
         <style>
         .summary-bar {{
