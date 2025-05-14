@@ -48,15 +48,15 @@ st.markdown("""
         padding-right: 3rem;
     }
     
-    /* Make chat messages same width as summary bar */
+    /* Align chat messages with page margins */
     .stChatMessage {
-        width: 100% !important;
-        max-width: none !important;
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
     }
     
-    .stChatMessage > div {
-        width: 100% !important;
-        max-width: none !important;
+    .stChatMessageContent {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
     
     .stTextInput>div>div>input {
