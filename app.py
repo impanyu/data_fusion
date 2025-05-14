@@ -151,10 +151,6 @@ update_summary_bar()
 # Main content area
 st.markdown("<!-- Chat content -->", unsafe_allow_html=True)
 
-# Display chat messages
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
 
 # Add + button above the chat input
 st.button("➕", key="add_button")
