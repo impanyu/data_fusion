@@ -68,11 +68,10 @@ def update_summary_bar():
         f"""
         <style>
         .summary-bar {{
-            background-color: #f0f2f6;
+            background-color: #e8f1ff;  /* Light blue color */
             padding: 1rem;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
-            border-left: 4px solid #4CAF50;
         }}
         </style>
         <div class="summary-bar">
