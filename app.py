@@ -198,7 +198,7 @@ if prompt := st.chat_input("Ask me anything..."):
     context = "\n\n".join(context_items)
     
     # Generate response using OpenAI
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant",avatar_style="initials"):
         message_placeholder = st.empty()
         full_response = ""
         
