@@ -75,23 +75,6 @@ st.markdown("""
         min-height: 100vh;
     }
     
-    /* Chat input container styling */
-    .chat-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        padding: 1rem 3rem;
-        border-top: 1px solid #e5e7eb;
-        z-index: 1000;
-    }
-    
-    /* Add padding at the bottom of the main content to prevent overlap */
-    .main {
-        padding-bottom: 100px !important;
-    }
-    
     /* Style the + button */
     .stButton > button {
         margin-top: 0.5rem;
@@ -173,67 +156,64 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Create columns for the input area
-col1, col2 = st.columns([1, 11])
+# Add + button above the chat input
+st.button("➕", key="add_button")
 
-with col1:
-    st.button("➕", key="add_button")
-
-with col2:
-    if prompt := st.chat_input("Ask me anything..."):
-        # Update current task and summary bar immediately
-        st.session_state.current_task = prompt
-        update_summary_bar()
+# Chat input (this will automatically stay at the bottom)
+if prompt := st.chat_input("Ask me anything..."):
+    # Update current task and summary bar immediately
+    st.session_state.current_task = prompt
+    update_summary_bar()
+    
+    # Process and store the user's input
+    process_text(data_collection, prompt, "chat")
+    
+    # Add user message to chat history
+    st.session_state.messages.append({"role": "user", "content": prompt})
+    
+    # Get relevant context from ChromaDB
+    results = data_collection.query(
+        query_texts=[prompt],
+        n_results=5,
+        include=["documents", "metadatas", "distances"]
+    )
+    
+    # Prepare context for the LLM
+    context_items = []
+    for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
+        source = meta.get('source', 'Unknown')
+        if source == 'file':
+            context_items.append(f"From file '{meta.get('filename', 'Unknown')}': {doc}")
+        else:
+            context_items.append(f"From {source}: {doc}")
+    
+    context = "\n\n".join(context_items)
+    
+    # Generate response using OpenAI
+    with st.chat_message("assistant"):
+        message_placeholder = st.empty()
+        full_response = ""
         
-        # Process and store the user's input
-        process_text(data_collection, prompt, "chat")
+        # Stream the response
+        for response in client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
+                {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
+            ],
+            stream=True,
+        ):
+            if response.choices[0].delta.content is not None:
+                full_response += response.choices[0].delta.content
+                message_placeholder.markdown(full_response + "▌")
         
-        # Add user message to chat history
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        
-        # Get relevant context from ChromaDB
-        results = data_collection.query(
-            query_texts=[prompt],
-            n_results=5,
-            include=["documents", "metadatas", "distances"]
-        )
-        
-        # Prepare context for the LLM
-        context_items = []
-        for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
-            source = meta.get('source', 'Unknown')
-            if source == 'file':
-                context_items.append(f"From file '{meta.get('filename', 'Unknown')}': {doc}")
-            else:
-                context_items.append(f"From {source}: {doc}")
-        
-        context = "\n\n".join(context_items)
-        
-        # Generate response using OpenAI
-        with st.chat_message("assistant"):
-            message_placeholder = st.empty()
-            full_response = ""
-            
-            # Stream the response
-            for response in client.chat.completions.create(
-                model="gpt-4o",
-                messages=[
-                    {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
-                    {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
-                ],
-                stream=True,
-            ):
-                if response.choices[0].delta.content is not None:
-                    full_response += response.choices[0].delta.content
-                    message_placeholder.markdown(full_response + "▌")
-            
-            message_placeholder.markdown(full_response)
-        
-        # Add assistant response to chat history
-        st.session_state.messages.append({"role": "assistant", "content": full_response})
-        
-        # Store the assistant's response
-        #process_text(data_collection, full_response, "assistant_response")
+        message_placeholder.markdown(full_response)
+    
+    # Add assistant response to chat history
+    st.session_state.messages.append({"role": "assistant", "content": full_response})
+    
+    # Store the assistant's response
+    #process_text(data_collection, full_response, "assistant_response")
 
 # File upload handling
 if st.session_state.get("add_button"):
