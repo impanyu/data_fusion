@@ -72,7 +72,7 @@ st.markdown(
     }}
     </style>
     <div class="summary-bar">
-    <strong>Current Task:</strong> {st.session_state.current_task}</div>
+    {st.session_state.current_task}</div>
     """,
     unsafe_allow_html=True
 )
