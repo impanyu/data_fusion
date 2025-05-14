@@ -46,6 +46,7 @@ st.markdown("""
         padding-bottom: 3rem;
         padding-left: 3rem;
         padding-right: 3rem;
+        background-color: #f0f2f5;
  
     }
     
