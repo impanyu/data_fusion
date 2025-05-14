@@ -153,7 +153,7 @@ with col1:
     update_summary_bar()
 
 with col2:
-    st.button("➕", key="add_button")
+    st.button("➕", key="add_button", help="Upload a file")
 
 # File upload section
 if st.session_state.get("show_file_upload", False):
