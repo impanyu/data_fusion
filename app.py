@@ -157,7 +157,7 @@ with col2:
 
 # File upload section
 if st.session_state.get("show_file_upload", False):
-    uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
+    uploaded_file = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"])
     #print(uploaded_file,flush=True)
     if uploaded_file is not None:
         result = process_file(data_collection, uploaded_file)
