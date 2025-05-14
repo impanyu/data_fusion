@@ -74,6 +74,45 @@ st.markdown("""
     section[data-testid="stSidebar"] {
         min-height: 100vh;
     }
+    
+    /* Chat input container styling */
+    .chat-input-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: white;
+        padding: 1rem 3rem;
+        border-top: 1px solid #e5e7eb;
+    }
+    
+    /* Input box styling */
+    .input-group {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 1rem;
+        padding: 0.5rem;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+    
+    .action-button {
+        background: transparent;
+        border: none;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        cursor: pointer;
+    }
+    
+    .action-button:hover {
+        background: #f3f4f6;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -114,6 +153,32 @@ def update_summary_bar():
 
 # Initial display of summary bar
 update_summary_bar()
+
+# Create columns for the input area
+col1, col2, col3, col4, col5, col6 = st.columns([1, 8, 1, 1, 1, 1])
+
+with col1:
+    st.button("➕", key="add_button")
+
+with col2:
+    prompt = st.chat_input("Ask anything", key="chat_input")
+
+with col3:
+    st.button("🔍", help="Search", key="search_button")
+
+with col4:
+    st.button("📚", help="Deep research", key="research_button")
+
+with col5:
+    st.button("🎨", help="Create image", key="image_button")
+
+with col6:
+    st.button("⋮", help="More options", key="more_button")
+
+# Handle file upload when + button is clicked
+if st.session_state.get("add_button"):
+    st.session_state.show_file_upload = True
+    st.rerun()
 
 # File upload section
 uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
