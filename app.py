@@ -140,9 +140,8 @@ if uploaded_file is not None:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything...", key="chat_input"):
-    # Update the current task immediately
+    # Update current task
     st.session_state.current_task = prompt
-    st.rerun()  # This forces Streamlit to rerun and update the display
     
     # Process and store the user's input
     process_text(prompt, "chat")
