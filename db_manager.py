@@ -14,10 +14,9 @@ class DBManager:
         os.makedirs(persist_dir, exist_ok=True)
         
         # Initialize ChromaDB with persistence
-        self.client = chromadb.Client(Settings(
-            persist_directory=persist_dir,
-            is_persistent=True
-        ))
+        self.client = chromadb.PersistentClient(
+            path=persist_dir
+        )
         
         # Initialize embedding function
         self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
@@ -35,24 +34,7 @@ class DBManager:
             name="frontend_tool",
             embedding_function=self.embedding_function
         )
-        
-        # Start periodic sync
-        self.start_sync_thread()
-    
-    def start_sync_thread(self):
-        """Start a background thread for periodic syncing"""
-        def sync_periodically():
-            while True:
-                time.sleep(self.sync_interval)
-                self.sync_to_disk()
-        
-        sync_thread = threading.Thread(target=sync_periodically, daemon=True)
-        sync_thread.start()
     
     def sync_to_disk(self):
-        """Force a sync of the database to disk"""
-        try:
-            self.client.persist()
-            print(f"Database synced to {self.persist_dir}")
-        except Exception as e:
-            print(f"Error syncing database: {str(e)}") 
+        """Force a sync of the database to disk - no longer needed as ChromaDB handles this automatically"""
+        pass 
