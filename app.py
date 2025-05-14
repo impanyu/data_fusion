@@ -119,16 +119,12 @@ if uploaded_file is not None:
         st.success("File processed and stored successfully!")
 
 # Chat input
-if prompt := st.chat_input("Ask me anything..."):
+if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     # Process and store the user's input
     process_text(prompt, "chat")
     
     # Add user message to chat history (keep this)
     st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Display user message
-    with st.chat_message("user"):
-        st.markdown(prompt)
     
     # Get relevant context from ChromaDB
     results = collection.query(
