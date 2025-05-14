@@ -7,6 +7,7 @@ from chromadb.utils import embedding_functions
 import json
 from datetime import datetime
 import uuid
+from text_processor import process_text, process_file  # Import the new functions
 
 # Load environment variables
 load_dotenv()
@@ -123,65 +124,13 @@ def update_summary_bar():
 # Initial display of summary bar
 update_summary_bar()
 
-def store_data(content, data_type, metadata=None):
-    """Store data in ChromaDB with metadata"""
-    if metadata is None:
-        metadata = {}
-    
-    # Add common metadata
-    metadata.update({
-        "timestamp": datetime.now().isoformat(),
-        "data_type": data_type,
-        "id": str(uuid.uuid4())
-    })
-    
-    # Store in ChromaDB
-    collection.add(
-        documents=[content],
-        metadatas=[metadata],
-        ids=[metadata["id"]]
-    )
-
-def process_file(file):
-    """Process uploaded file and store in vector database"""
-    try:
-        # Read file content
-        content = file.getvalue().decode("utf-8")
-        
-        # Create metadata
-        metadata = {
-            "filename": file.name,
-            "file_type": file.type,
-            "file_size": len(content),
-            "source": "file_upload"
-        }
-        
-        # Store in vector database
-        store_data(content, "file", metadata)
-        return True
-    except Exception as e:
-        st.error(f"Error processing file: {str(e)}")
-        return False
-
-def process_text(text, source="chat"):
-    """Process text input and store in vector database"""
-    try:
-        metadata = {
-            "source": source,
-            "content_type": "text"
-        }
-        
-        # Store in vector database
-        store_data(text, "text", metadata)
-        return True
-    except Exception as e:
-        st.error(f"Error processing text: {str(e)}")
-        return False
-
 # File upload section
 uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
 if uploaded_file is not None:
-    if process_file(uploaded_file):
+    result = process_file(collection, uploaded_file)
+    if isinstance(result, tuple):  # Error occurred
+        st.error(f"Error processing file: {result[1]}")
+    elif result:
         st.success("File processed and stored successfully!")
 
 # Chat input
@@ -191,7 +140,7 @@ if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     update_summary_bar()
     
     # Process and store the user's input
-    process_text(prompt, "chat")
+    process_text(collection, prompt, "chat")
     
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
@@ -238,4 +187,4 @@ if prompt := st.chat_input("Ask me anything...", key="chat_input"):
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     # Store the assistant's response
-    process_text(full_response, "assistant_response")
+    process_text(collection, full_response, "assistant_response")
