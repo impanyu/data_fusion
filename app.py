@@ -190,7 +190,7 @@ if uploaded_file is not None:
         st.success("File processed and stored successfully!")
 
 # Chat input
-if prompt := st.chat_input("Ask me anything...", key="chat_input"):
+if prompt := st.chat_input("Ask me anything..."):
     # Update current task and summary bar immediately
     st.session_state.current_task = prompt
     update_summary_bar()
