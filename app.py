@@ -51,8 +51,8 @@ st.markdown("""
     /* Set chat message width */
     div[data-testid="stBottomBlockContainer"] {
         
-        margin-left: 3rem !important;
-        margin-right: 3rem !important;
+        padding-left: 3rem !important;
+        padding-right: 3rem !important;
     }
     
     div[data-testid="stMarkdownContainer"] {
