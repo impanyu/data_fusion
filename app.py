@@ -225,8 +225,7 @@ if prompt := st.chat_input("Ask me anything..."):
 
 # File upload handling
 if st.session_state.get("add_button"):
-    
-    st.session_state.show_file_upload = True
   
+    st.session_state.show_file_upload = not st.session_state.get("show_file_upload", False)
         
     st.rerun()
