@@ -42,13 +42,10 @@ st.markdown("""
     <style>
     /* Reduce default page margins and add border */
     .block-container {
-        padding-top: 3rem;
-        padding-bottom: 3rem;
-        padding-left: 3rem;
-        padding-right: 3rem;
+
         border: 1px solid #e6e6e6;  /* Light gray border */
         border-radius: 0.5rem;      /* Rounded corners */
-        margin: 1rem;               /* Add some margin around the container */
+        margin: 3rem;               /* Add some margin around the container */
     }
     
     /* Set chat message width */
