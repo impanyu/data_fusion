@@ -158,7 +158,7 @@ with col2:
 # File upload section
 if st.session_state.get("show_file_upload", False):
     uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
-    print(uploaded_file,flush=True)
+    #print(uploaded_file,flush=True)
     if uploaded_file is not None:
         result = process_file(data_collection, uploaded_file)
         if isinstance(result, tuple):  # Error occurred
@@ -225,5 +225,8 @@ if prompt := st.chat_input("Ask me anything..."):
 
 # File upload handling
 if st.session_state.get("add_button"):
-    st.session_state.show_file_upload = True
+    if st.session_state.get("show_file_upload", False):
+        st.session_state.show_file_upload = True
+    else:
+        st.session_state.show_file_upload = False
     st.rerun()
