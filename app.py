@@ -57,7 +57,7 @@ st.markdown("""
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "current_task" not in st.session_state:
-    st.session_state.current_task = ""
+    st.session_state.current_task = "Current Task"
 
 # Create a placeholder for the summary bar
 summary_placeholder = st.empty()
