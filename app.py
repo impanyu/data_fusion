@@ -107,6 +107,11 @@ def update_summary_bar():
             border-radius: 0.5rem;
             margin-bottom: 1rem;
             font-size: 0.9rem;  /* Smaller text size */
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;  /* Semi-bold */
+            letter-spacing: 0.02em;  /* Slight letter spacing */
+            color: #1E293B;  /* Dark slate color */
+            text-transform: uppercase;  /* Optional: makes it more title-like */
         }}
         </style>
         <div class="summary-bar">
