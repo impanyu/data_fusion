@@ -164,13 +164,13 @@ if st.session_state.get("show_file_upload", False):
             st.error(f"Error processing file: {result[1]}")
         elif result:
             st.success("File processed and stored successfully!")
-    st.session_state.show_file_upload = False
+    
 
 # Chat input (this will automatically stay at the bottom)
 if prompt := st.chat_input("Ask me anything..."):
     # Update current task and summary bar immediately
     st.session_state.current_task = prompt
-    update_summary_bar()
+    #update_summary_bar()
     
     # Process and store the user's input
     process_text(data_collection, prompt, "chat")
