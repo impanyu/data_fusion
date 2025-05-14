@@ -103,6 +103,7 @@ def update_summary_bar():
             padding: 1rem;
             border-radius: 0.5rem;
             margin-bottom: 1rem;
+            font-size: 0.9rem;  /* Smaller text size */
         }}
         </style>
         <div class="summary-bar">
