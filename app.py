@@ -48,11 +48,7 @@ st.markdown("""
         padding-right: 5rem;
     }
     
-    /* Remove extra margins around the main content */
-    .main > div {
-        padding-top: 0rem;
-    }
-    
+ 
     .stTextInput>div>div>input {
         font-size: 1.2rem;
         padding: 1rem;
