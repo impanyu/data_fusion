@@ -25,6 +25,11 @@ collection = chroma_client.get_or_create_collection(
     embedding_function=openai_ef
 )
 
+frontend_tool_collection = chroma_client.get_or_create_collection(
+    name="frontend_tool",
+    embedding_function=openai_ef
+)
+
 # Set page config
 st.set_page_config(
     page_title="Ag Data Fusion Agent",
@@ -113,17 +118,12 @@ if uploaded_file is not None:
     if process_file(uploaded_file):
         st.success("File processed and stored successfully!")
 
-# Display chat history
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
 # Chat input
 if prompt := st.chat_input("Ask me anything..."):
     # Process and store the user's input
     process_text(prompt, "chat")
     
-    # Add user message to chat history
+    # Add user message to chat history (keep this)
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     # Display user message
@@ -168,7 +168,7 @@ if prompt := st.chat_input("Ask me anything..."):
         
         message_placeholder.markdown(full_response)
     
-    # Add assistant response to chat history
+    # Add assistant response to chat history (keep this)
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     
     # Store the assistant's response
