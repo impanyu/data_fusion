@@ -116,13 +116,13 @@ if "messages" not in st.session_state:
 if "current_task" not in st.session_state:
     st.session_state.current_task = "Current Task"
 
-# Create a placeholder for the summary bar
-summary_placeholder = st.empty()
-
 # Create a row for summary bar and + button
-col1, col2 = st.columns([10, 2])
+col1, col2 = st.columns([11, 1])
 
 with col1:
+    # Create a placeholder for the summary bar inside the first column
+    summary_placeholder = st.empty()
+    
     # Function to update summary bar
     def update_summary_bar():
         summary_placeholder.markdown(
@@ -153,7 +153,7 @@ with col1:
     update_summary_bar()
 
 with col2:
-    st.button("➕", key="add_button")
+    st.button("➕", key="add_button", help="Upload a file")
 
 # File upload section
 if st.session_state.get("show_file_upload", False):
