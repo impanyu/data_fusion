@@ -59,23 +59,30 @@ if "messages" not in st.session_state:
 if "current_task" not in st.session_state:
     st.session_state.current_task = ""
 
-# Always show summary bar at the top
-st.markdown(
-    f"""
-    <style>
-    .summary-bar {{
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        margin-bottom: 1rem;
-        border-left: 4px solid #4CAF50;
-    }}
-    </style>
-    <div class="summary-bar">
-    {st.session_state.current_task}</div>
-    """,
-    unsafe_allow_html=True
-)
+# Create a container for the summary bar
+summary_container = st.container()
+
+# Function to update summary bar
+def update_summary_bar():
+    summary_container.markdown(
+        f"""
+        <style>
+        .summary-bar {{
+            background-color: #f0f2f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #4CAF50;
+        }}
+        </style>
+        <div class="summary-bar">
+        {st.session_state.current_task}</div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# Initial display of summary bar
+update_summary_bar()
 
 def store_data(content, data_type, metadata=None):
     """Store data in ChromaDB with metadata"""
@@ -140,8 +147,9 @@ if uploaded_file is not None:
 
 # Chat input
 if prompt := st.chat_input("Ask me anything...", key="chat_input"):
-    # Update current task
+    # Update current task and summary bar immediately
     st.session_state.current_task = prompt
+    update_summary_bar()
     
     # Process and store the user's input
     process_text(prompt, "chat")
