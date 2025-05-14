@@ -42,10 +42,10 @@ st.markdown("""
     <style>
     /* Reduce default page margins */
     .block-container {
-        padding-top: 6rem;
-        padding-bottom: 5rem;
-        padding-left: 5rem;
-        padding-right: 5rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
     }
     
  
