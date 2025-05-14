@@ -153,11 +153,12 @@ with col1:
     update_summary_bar()
 
 with col2:
-    st.button("➕", key="add_button", help="Upload a file")
+    st.button("➕", key="add_button")
 
 # File upload section
 if st.session_state.get("show_file_upload", False):
     uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
+    print(uploaded_file,flush=True)
     if uploaded_file is not None:
         result = process_file(data_collection, uploaded_file)
         if isinstance(result, tuple):  # Error occurred
@@ -170,7 +171,7 @@ if st.session_state.get("show_file_upload", False):
 if prompt := st.chat_input("Ask me anything..."):
     # Update current task and summary bar immediately
     st.session_state.current_task = prompt
-    #update_summary_bar()
+    update_summary_bar()
     
     # Process and store the user's input
     process_text(data_collection, prompt, "chat")
