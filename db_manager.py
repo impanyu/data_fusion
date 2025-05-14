@@ -24,16 +24,35 @@ class DBManager:
             model_name="text-embedding-ada-002"
         )
         
-        # Get or create collections
-        self.data_store = self.client.get_or_create_collection(
-            name="data_store",
-            embedding_function=self.embedding_function
-        )
-        
-        self.frontend_tool = self.client.get_or_create_collection(
-            name="frontend_tool",
-            embedding_function=self.embedding_function
-        )
+    def create_collection(self, name):
+        """Create a new collection"""
+        try:
+            return self.client.create_collection(
+                name=name,
+                embedding_function=self.embedding_function
+            )
+        except Exception as e:
+            print(f"Error creating collection {name}: {str(e)}")
+            return None
+    
+    def get_collection(self, name):
+        """Get a collection by name or create it if it doesn't exist"""
+        try:
+            return self.client.get_or_create_collection(
+                name=name,
+                embedding_function=self.embedding_function
+            )
+        except Exception as e:
+            print(f"Error getting or creating collection {name}: {str(e)}")
+            return None
+    
+    def list_collections(self):
+        """List all collections"""
+        try:
+            return self.client.list_collections()
+        except Exception as e:
+            print(f"Error listing collections: {str(e)}")
+            return []
     
     def sync_to_disk(self):
         """Force a sync of the database to disk - no longer needed as ChromaDB handles this automatically"""
