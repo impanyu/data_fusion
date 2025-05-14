@@ -40,6 +40,19 @@ st.set_page_config(
 # Custom CSS for the chat input and page height
 st.markdown("""
     <style>
+    /* Reduce default page margins */
+    .block-container {
+        padding-top: 1rem;
+        padding-bottom: 0rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }
+    
+    /* Remove extra margins around the main content */
+    .main > div {
+        padding-top: 0rem;
+    }
+    
     .stTextInput>div>div>input {
         font-size: 1.2rem;
         padding: 1rem;
