@@ -76,42 +76,24 @@ st.markdown("""
     }
     
     /* Chat input container styling */
-    .chat-input-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: white;
-        padding: 1rem 3rem;
-        border-top: 1px solid #e5e7eb;
+    [data-testid="stVerticalBlock"] > [style*="flex-direction: column;"] > [data-testid="stVerticalBlock"] {
+        gap: 0rem;
     }
     
-    /* Input box styling */
-    .input-group {
-        display: flex;
-        align-items: center;
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 1rem;
-        padding: 0.5rem;
+    .stButton {
+        margin-top: 0.5rem;
     }
     
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-        padding: 0.5rem;
+    /* Adjust button and input alignment */
+    .stButton > button {
+        margin-top: 0.25rem;
+        height: 2.5rem;
+        padding-top: 0.25rem;
     }
     
-    .action-button {
-        background: transparent;
-        border: none;
-        padding: 0.5rem;
-        border-radius: 0.5rem;
-        cursor: pointer;
-    }
-    
-    .action-button:hover {
-        background: #f3f4f6;
+    /* Remove duplicate chat input */
+    .main > div:has(> .stChatInput) {
+        display: none;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -154,93 +136,84 @@ def update_summary_bar():
 # Initial display of summary bar
 update_summary_bar()
 
-# Create columns for the input area
-col1, col2, col3, col4, col5, col6 = st.columns([1, 8, 1, 1, 1, 1])
-
-with col1:
-    st.button("➕", key="add_button")
-
-with col2:
-    prompt = st.chat_input("Ask anything", key="chat_input")
-
-with col3:
-    st.button("🔍", help="Search", key="search_button")
-
-with col4:
-    st.button("📚", help="Deep research", key="research_button")
-
-with col5:
-    st.button("🎨", help="Create image", key="image_button")
-
-with col6:
-    st.button("⋮", help="More options", key="more_button")
-
-# Handle file upload when + button is clicked
-if st.session_state.get("add_button"):
-    st.session_state.show_file_upload = True
-    st.rerun()
-
-# File upload section
-uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
-if uploaded_file is not None:
-    result = process_file(data_collection, uploaded_file)
-    if isinstance(result, tuple):  # Error occurred
-        st.error(f"Error processing file: {result[1]}")
-    elif result:
-        st.success("File processed and stored successfully!")
-
-# Chat input
-if prompt := st.chat_input("Ask me anything..."):
-    # Update current task and summary bar immediately
-    st.session_state.current_task = prompt
-    update_summary_bar()
+# Create columns for the input area at the bottom
+with st.container():
+    st.markdown("<div style='height: 100px'></div>", unsafe_allow_html=True)  # Add space for fixed input
     
-    # Process and store the user's input
-    process_text(data_collection, prompt, "chat")
+    input_container = st.container()
     
-    # Add user message to chat history
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    
-    # Get relevant context from ChromaDB
-    results = data_collection.query(
-        query_texts=[prompt],
-        n_results=5,
-        include=["documents", "metadatas", "distances"]
-    )
-    
-    # Prepare context for the LLM
-    context_items = []
-    for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
-        source = meta.get('source', 'Unknown')
-        if source == 'file':
-            context_items.append(f"From file '{meta.get('filename', 'Unknown')}': {doc}")
-        else:
-            context_items.append(f"From {source}: {doc}")
-    
-    context = "\n\n".join(context_items)
-    
-    # Generate response using OpenAI
-    with st.chat_message("assistant"):
-        message_placeholder = st.empty()
-        full_response = ""
+    with input_container:
+        col1, col2 = st.columns([1, 11])
         
-        # Stream the response
-        for response in client.chat.completions.create(
-            model="gpt-4o",
-            messages=[
-                {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
-                {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
-            ],
-            stream=True,
-        ):
-            if response.choices[0].delta.content is not None:
-                full_response += response.choices[0].delta.content
-                message_placeholder.markdown(full_response + "▌")
+        with col1:
+            if st.button("➕", key="add_button"):
+                st.session_state.show_file_upload = True
+                st.rerun()
         
-        message_placeholder.markdown(full_response)
-    
-    # Add assistant response to chat history
-    st.session_state.messages.append({"role": "assistant", "content": full_response})
-    
-    # Store the assistant's response
-    #process_text(data_collection, full_response, "assistant_response")
+        with col2:
+            if prompt := st.chat_input("Ask me anything..."):
+                # Update current task and summary bar immediately
+                st.session_state.current_task = prompt
+                update_summary_bar()
+                
+                # Process and store the user's input
+                process_text(data_collection, prompt, "chat")
+                
+                # Add user message to chat history
+                st.session_state.messages.append({"role": "user", "content": prompt})
+                
+                # Get relevant context from ChromaDB
+                results = data_collection.query(
+                    query_texts=[prompt],
+                    n_results=5,
+                    include=["documents", "metadatas", "distances"]
+                )
+                
+                # Prepare context for the LLM
+                context_items = []
+                for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
+                    source = meta.get('source', 'Unknown')
+                    if source == 'file':
+                        context_items.append(f"From file '{meta.get('filename', 'Unknown')}': {doc}")
+                    else:
+                        context_items.append(f"From {source}: {doc}")
+                
+                context = "\n\n".join(context_items)
+                
+                # Generate response using OpenAI
+                with st.chat_message("assistant"):
+                    message_placeholder = st.empty()
+                    full_response = ""
+                    
+                    # Stream the response
+                    for response in client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
+                            {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
+                        ],
+                        stream=True,
+                    ):
+                        if response.choices[0].delta.content is not None:
+                            full_response += response.choices[0].delta.content
+                            message_placeholder.markdown(full_response + "▌")
+                    
+                    message_placeholder.markdown(full_response)
+                
+                # Add assistant response to chat history
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
+                
+                # Store the assistant's response
+                #process_text(data_collection, full_response, "assistant_response")
+
+# File upload dialog
+if st.session_state.get("show_file_upload", False):
+    uploaded_file = st.file_uploader("Upload a file", type=["txt", "image", "csv", "json", "pdf"])
+    if uploaded_file is not None:
+        result = process_file(data_collection, uploaded_file)
+        if isinstance(result, tuple):  # Error occurred
+            st.error(f"Error processing file: {result[1]}")
+        elif result:
+            st.success("File processed and stored successfully!")
+            st.session_state.show_file_upload = False
+            st.rerun()
