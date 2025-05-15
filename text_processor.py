@@ -2,6 +2,9 @@ import uuid
 from datetime import datetime
 from system_prompt import *
 import json
+import os
+import PyPDF2
+from io import BytesIO
 
 
 return_format_mapping = {
@@ -167,27 +170,55 @@ def invoke_tool(db_manager, name, arguments):
 
 
 def process_file(db_manager, file):
-    """Process uploaded file and store in vector database"""
+    """Process uploaded file and store in vector database and local directory"""
     try:
-        # Determine file type and process accordingly
+        # Create uploads directory if it doesn't exist
+        upload_dir = "./uploaded_files"
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        # Get base filename and extension
+        original_name = file.name
+        base_name, extension = os.path.splitext(original_name)
+        
+        # Find a unique filename
+        counter = 0
+        file_path = os.path.join(upload_dir, original_name)
+        while os.path.exists(file_path):
+            counter += 1
+            new_name = f"{base_name}_{counter}{extension}"
+            file_path = os.path.join(upload_dir, new_name)
+        
+        # Save the file
+        with open(file_path, "wb") as f:
+            f.write(file.getvalue())
+            
+        # Process content based on file type
         if file.type.startswith('text/') or file.name.endswith(('.txt', '.csv', '.json')):
-            # Text file processing
             content = file.getvalue().decode("utf-8")
+        elif file.name.endswith('.pdf'):
+            # Read PDF content
+            pdf_content = []
+            pdf_file = BytesIO(file.getvalue())
+            pdf_reader = PyPDF2.PdfReader(pdf_file)
+            
+            # Extract text from each page
+            for page_num in range(len(pdf_reader.pages)):
+                page = pdf_reader.pages[page_num]
+                pdf_content.append(f"Page {page_num + 1}:\n{page.extract_text()}")
+            
+            content = "\n\n".join(pdf_content)
         elif file.type.startswith('image/'):
-            # Image file processing - store as binary for now
             content = f"Binary image file: {file.name}"
-            # Here you could add image processing logic if needed
         else:
-            # Other binary files
             content = f"Binary file: {file.name}"
-            # Could add other file type processing here
         
         # Create metadata
         metadata = {
-            "filename": file.name,
-            "file_type": file.type,
-            "file_size": len(file.getvalue()),
-            "source": "file_upload"
+            "name": os.path.basename(file_path),  # Use the actual saved filename
+            "type": file.type,
+            "size": len(file.getvalue()),
+            "source": "file_upload",
+            "path": file_path  # Store the local file path
         }
         
         # Store in vector database
