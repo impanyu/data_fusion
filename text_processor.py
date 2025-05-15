@@ -215,14 +215,14 @@ def process_file(db_manager, file):
         # Create metadata
         metadata = {
             "name": os.path.basename(file_path),  # Use the actual saved filename
-            "type": file.type,
+            "file_type": file.type,
             "size": len(file.getvalue()),
             "source": "file_upload",
             "path": file_path  # Store the local file path
         }
-        
+        data_collection = db_manager.get_collection("data_store")
         # Store in vector database
-        store_data(db_manager, content, "file", metadata)
+        store_data(data_collection, content, "file", metadata)
         return True
     except Exception as e:
         return False, str(e) 
