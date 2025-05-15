@@ -158,7 +158,7 @@ with col2:
 uploaded_files = []
 # File upload section
 if st.session_state.get("show_file_upload", False):
-    uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"],accept_multiple_files=True)
+    uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"],accept_multiple_files=True,label_visibility="collapsed")
     #print(uploaded_file,flush=True)
     if uploaded_files is not []:
         
