@@ -54,6 +54,25 @@ def process_text(db_manager, prompt, client, files = [], depth=0):
 
     
     context = "\n\n".join(context_items)
+
+    #read the files and add to context
+    for file_path in files:
+        # only read text, csv, json, pdf files
+        if file_path.endswith(('.txt', '.csv', '.json')):
+            with open(file_path, "r") as file:
+                context += f"\n\nFile content: {file.read()}"
+        elif file_path.endswith('.pdf'):
+            # Read PDF content
+            with open(file_path, "rb") as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                pdf_content = []
+                for page_num in range(len(pdf_reader.pages)):
+                    page = pdf_reader.pages[page_num]
+                    text = page.extract_text()
+                    if text.strip():  # Only add non-empty pages
+                        pdf_content.append(f"Page {page_num + 1}:\n{text}")
+                context += f"\n\nPDF content: {'\n\n'.join(pdf_content)}"
+    
     
     
     response = client.chat.completions.create(
@@ -102,42 +121,49 @@ def interpret_user_input(db_manager, prompt, client, context, return_format, dep
     # Prepare context for the LLM
     tools = []
     for doc, meta in zip(results['documents'][0], results['metadatas'][0]): 
-        tools.append(f"From {meta.get('id', 'Unknown')}: {doc}")
+        #doc should be a json string compatible with the tool schema
+        tools.append(json.loads(doc))
     
     
     tools += "\n\n".join(tools)
+
+    #add file_upload tool
+    tools += [{
+        "type": "function",
+        "function": {
+            "name": "file_upload",
+            "description": "Upload and process files to the system",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "description": {
+                        "type": "string",
+                        "description": "The files to be uploaded"
+                    }
+                },
+                "required": ["description"]
+            }
+        }
+    }]
     
     
     response = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": TOOL_SEARCH_PROMPT},
-            {"role": "user", "content": f"Context: {context}\n\n Tools: {tools}\n\n Task: {prompt}"}
+            {"role": "user", "content": f"Context: {context}\n\n Tools: {tools}\n\n Task: {prompt}\n\n input_files: {files}"}
         ],
-        response_format={
-            "type": "json_object",
-            "restrict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "name": {"type": "string"},
-                    "arguments": {"type": "object"},
-                    "complete": {"type": "boolean"}
-                },
-                "required": ["name", "arguments", "complete"]
-            }
-        },
+        tools=tools,
+        parallel_tool_calls=False,
         stream=False,
     )
 
-    response_json = json.loads(response.choices[0].message.content)
+    retrieved_tools = json.loads(response.choices[0].message.content)
     
-    if response_json["complete"]:
-        if file is not None:
-            response_json["arguments"]["file"] = file
-        tool_result = invoke_tool(db_manager, response_json["name"], response_json["arguments"])
+    if retrieved_tools is not []:
+        tool_result = invoke_tool(db_manager, retrieved_tools[0]["name"], retrieved_tools[0]["arguments"])
         transform_result = transform_result(tool_result, return_format, client)
-        return {"result": transform_result, "UI": response_json["UI"]}
+        return {"result": transform_result}
     else:
         return {"result": "Sorry, I tried but can't find the answer to the question", "UI": "chat"}
 
@@ -204,9 +230,13 @@ def process_file(db_manager, file):
             # Extract text from each page
             for page_num in range(len(pdf_reader.pages)):
                 page = pdf_reader.pages[page_num]
-                pdf_content.append(f"Page {page_num + 1}:\n{page.extract_text()}")
+                text = page.extract_text()
+                if text.strip():  # Only add non-empty pages
+                    pdf_content.append(f"Page {page_num + 1}:\n{text}")
             
             content = "\n\n".join(pdf_content)
+            if not content.strip():  # If no text was extracted
+                content = f"PDF file (no extractable text): {file.name}"
         elif file.type.startswith('image/'):
             content = f"Binary image file: {file.name}"
         else:
@@ -223,6 +253,6 @@ def process_file(db_manager, file):
         data_collection = db_manager.get_collection("data_store")
         # Store in vector database
         store_data(data_collection, content, "file", metadata)
-        return True
+        return file_path
     except Exception as e:
         return False, str(e) 

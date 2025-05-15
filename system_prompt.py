@@ -18,19 +18,7 @@ If the context is relevant and enough, return a json object with the following s
 
 TOOL_SEARCH_PROMPT = """
 You are a helpful assistant. Find which of the tools can be invoked to complete the task. Also extract the arguments for the tool, based on the context and user's task.
-If you find the tool, return the json object with the following structure:
-{
-    "name": "The tool name",
-    "arguments": "The arguments for the tool, which is a json object, mapping the argument name to the argument value",
-    "complete": True,
-    
-}
-If you don't find the tool, return a json object with the following structure:
-{
-    "name": "None",
-    "arguments": "None",
-    "complete": False,
-}
+
 """
 
 TRANSFORM_PROMPT = """
