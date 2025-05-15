@@ -1,5 +1,16 @@
 import uuid
 from datetime import datetime
+from system_prompt import *
+import json
+
+
+return_format_mapping = {
+    "chat": "string",
+    "file_upload": "string",
+    "plot": "dict",
+    "map": "dict",
+    "dirs": "list"
+}
 
 def store_data(collection, content, data_type, metadata=None):
     """Store data in ChromaDB with metadata"""
@@ -20,36 +31,167 @@ def store_data(collection, content, data_type, metadata=None):
         ids=[metadata["id"]]
     )
 
-def process_text(collection, text, source="chat"):
-    """Process text input and store in vector database"""
-    try:
-        metadata = {
-            "source": source,
-            "content_type": "text"
-        }
-        
-        # Store in vector database
-        store_data(collection, text, "text", metadata)
-        return True
-    except Exception as e:
-        return False, str(e)
+def process_text(db_manager, prompt, client, files = [], depth=0):
 
-def process_file(collection, file):
+    data_collection = db_manager.get_collection("data_store")
+    prompt = prompt 
+
+    # First check if the prompt can be answered directly from the data store
+    results = data_collection.query(
+        query_texts=[prompt],   
+        n_results=5,
+        include=["documents", "metadatas", "distances"]
+    )
+    
+    # Prepare context for the LLM
+    context_items = []
+    for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
+        
+        context_items.append(f"From {meta.get('id', 'Unknown')}: {doc}")
+
+    
+    context = "\n\n".join(context_items)
+    
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": DATA_SEARCH_PROMPT},
+            {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
+        ],
+        response_format={
+            "type": "json_object",
+            "restrict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "result": {"type": "string"},
+                    "complete": {"type": "boolean"}
+                },
+                "required": ["result", "complete"]
+            }
+        },
+        stream=False,
+    )
+
+    response_json = json.loads(response.choices[0].message.content)
+
+
+    if response_json["complete"]:
+        return {"result": response_json["result"], "UI": "chat"}
+    else:
+        context =  response_json["result"]
+        return_format = return_format_mapping[response_json["UI"]]
+
+        interpret_result = interpret_user_input(db_manager, prompt, client, context, return_format, depth, files)
+        return {"result": interpret_result["result"], "UI": response_json["UI"]}
+
+def interpret_user_input(db_manager, prompt, client, context, return_format, depth=0, files=[]):
+    data_collection = db_manager.get_collection("backend_tool")
+
+    # First check if the prompt can be answered directly from the data store
+    results = data_collection.query(
+        query_texts=[prompt],
+        n_results=5,
+        include=["documents", "metadatas", "distances"]
+    )
+    
+    # Prepare context for the LLM
+    tools = []
+    for doc, meta in zip(results['documents'][0], results['metadatas'][0]): 
+        tools.append(f"From {meta.get('id', 'Unknown')}: {doc}")
+    
+    
+    tools += "\n\n".join(tools)
+    
+    
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[
+            {"role": "system", "content": TOOL_SEARCH_PROMPT},
+            {"role": "user", "content": f"Context: {context}\n\n Tools: {tools}\n\n Task: {prompt}"}
+        ],
+        response_format={
+            "type": "json_object",
+            "restrict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string"},
+                    "arguments": {"type": "object"},
+                    "complete": {"type": "boolean"}
+                },
+                "required": ["name", "arguments", "complete"]
+            }
+        },
+        stream=False,
+    )
+
+    response_json = json.loads(response.choices[0].message.content)
+    
+    if response_json["complete"]:
+        if file is not None:
+            response_json["arguments"]["file"] = file
+        tool_result = invoke_tool(db_manager, response_json["name"], response_json["arguments"])
+        transform_result = transform_result(tool_result, return_format, client)
+        return {"result": transform_result, "UI": response_json["UI"]}
+    else:
+        return {"result": "Sorry, I tried but can't find the answer to the question", "UI": "chat"}
+
+def transform_result(tool_result, return_format, client):
+    if type(tool_result) == return_format:
+        return tool_result
+    # first transform the tool result to string
+    if type(tool_result) == "dict":
+        tool_result = json.dumps(tool_result)
+    elif type(tool_result) == "list":
+        tool_result = json.dumps(tool_result)
+    elif type(tool_result) == "float" or type(tool_result) == "int":
+        tool_result = str(tool_result)
+
+    # then use llm to transform the tool result to the return format
+    response = client.chat.completions.create(
+        model="gpt-4o",
+        messages=[{"role": "system", "content": TRANSFORM_PROMPT}, {"role": "user", "content": f"Tool result: {tool_result}\n\n Return format: {return_format}"}],
+        stream=False,
+    )
+    # parse the response to the return format
+    return_result = json.loads(response.choices[0].message.content)
+    
+    return return_result
+
+def invoke_tool(db_manager, name, arguments):
+    
+    if name == "file_upload":
+        process_file(db_manager, arguments["description"])
+
+
+def process_file(db_manager, file):
     """Process uploaded file and store in vector database"""
     try:
-        # Read file content
-        content = file.getvalue().decode("utf-8")
+        # Determine file type and process accordingly
+        if file.type.startswith('text/') or file.name.endswith(('.txt', '.csv', '.json')):
+            # Text file processing
+            content = file.getvalue().decode("utf-8")
+        elif file.type.startswith('image/'):
+            # Image file processing - store as binary for now
+            content = f"Binary image file: {file.name}"
+            # Here you could add image processing logic if needed
+        else:
+            # Other binary files
+            content = f"Binary file: {file.name}"
+            # Could add other file type processing here
         
         # Create metadata
         metadata = {
             "filename": file.name,
             "file_type": file.type,
-            "file_size": len(content),
+            "file_size": len(file.getvalue()),
             "source": "file_upload"
         }
         
         # Store in vector database
-        store_data(collection, content, "file", metadata)
+        store_data(db_manager, content, "file", metadata)
         return True
     except Exception as e:
         return False, str(e) 

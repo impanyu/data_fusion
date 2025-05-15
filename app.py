@@ -2,7 +2,6 @@ import streamlit as st
 from openai import OpenAI
 import os
 from dotenv import load_dotenv
-import chromadb
 from chromadb.utils import embedding_functions
 import json
 from datetime import datetime
@@ -19,6 +18,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 # Initialize database manager (replaces previous ChromaDB initialization)
 db_manager = DBManager(persist_dir="./vector_db")
 data_collection = db_manager.get_collection("data_store")
+backend_tool_collection = db_manager.get_collection("backend_tool")
 frontend_tool_collection = db_manager.get_collection("frontend_tool")
 
 
@@ -155,12 +155,14 @@ with col1:
 with col2:
     st.button("➕", key="add_button", help="Upload a file")
 
+uploaded_files = []
 # File upload section
 if st.session_state.get("show_file_upload", False):
-    uploaded_file = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"])
+    uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"],accept_multiple_files=True)
     #print(uploaded_file,flush=True)
-    if uploaded_file is not None:
-        result = process_file(data_collection, uploaded_file)
+    if uploaded_files is not []:
+        
+        result = process_file(db_manager, uploaded_files)
         if isinstance(result, tuple):  # Error occurred
             st.error(f"Error processing file: {result[1]}")
         elif result:
@@ -174,7 +176,7 @@ if prompt := st.chat_input("Ask me anything..."):
     update_summary_bar()
     
     # Process and store the user's input
-    process_text(data_collection, prompt, "chat")
+    #process_text(db_manager, prompt, client, uploaded_files)
     
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
