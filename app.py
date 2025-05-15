@@ -153,18 +153,22 @@ with col1:
     update_summary_bar()
 
 with col2:
-    if st.button("➕", key="add_button", help="Upload a file"):
+    if st.button("➕", key="add_button", help="Upload"):
         st.session_state.show_file_upload = not st.session_state.get("show_file_upload", False)
+        if st.session_state.show_file_upload:
+            st.session_state.current_task = "Uploading files"
+            update_summary_bar()
 
 # File upload section
 if st.session_state.get("show_file_upload", False):
     uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"], accept_multiple_files=True, label_visibility="collapsed")
     if uploaded_files:
-        result = process_file(db_manager, uploaded_files)
-        if isinstance(result, tuple):
-            st.error(f"Error processing file: {result[1]}")
-        elif result:
-            st.success("File processed and stored successfully!")
+        for file in uploaded_files:
+            result = process_file(db_manager, file)
+            if isinstance(result, tuple):
+                st.error(f"Error processing file: {result[1]}")
+            elif result:
+                st.success("File processed and stored successfully!")
     
 
 # Chat input (this will automatically stay at the bottom)
