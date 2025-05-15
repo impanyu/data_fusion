@@ -153,17 +153,15 @@ with col1:
     update_summary_bar()
 
 with col2:
-    st.button("➕", key="add_button", help="Upload a file")
+    if st.button("➕", key="add_button", help="Upload a file"):
+        st.session_state.show_file_upload = not st.session_state.get("show_file_upload", False)
 
-uploaded_files = []
 # File upload section
 if st.session_state.get("show_file_upload", False):
-    uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"],accept_multiple_files=True,label_visibility="collapsed")
-    #print(uploaded_file,flush=True)
-    if uploaded_files is not []:
-        
+    uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"], accept_multiple_files=True, label_visibility="collapsed")
+    if uploaded_files:
         result = process_file(db_manager, uploaded_files)
-        if isinstance(result, tuple):  # Error occurred
+        if isinstance(result, tuple):
             st.error(f"Error processing file: {result[1]}")
         elif result:
             st.success("File processed and stored successfully!")
@@ -224,10 +222,3 @@ if prompt := st.chat_input("Ask me anything..."):
     
     # Store the assistant's response
     #process_text(data_collection, full_response, "assistant_response")
-
-# File upload handling
-if st.session_state.get("add_button"):
-  
-    st.session_state.show_file_upload = not st.session_state.get("show_file_upload", False)
-        
-    st.rerun()
