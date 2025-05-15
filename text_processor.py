@@ -146,6 +146,7 @@ def interpret_user_input(db_manager, prompt, client, context, return_format, dep
         }
     }]
     
+
     
     response = client.chat.completions.create(
         model="gpt-4o",
