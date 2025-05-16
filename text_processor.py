@@ -71,7 +71,7 @@ def process_text(db_manager, prompt, client, files = [], depth=0):
                     text = page.extract_text()
                     if text.strip():  # Only add non-empty pages
                         pdf_content.append(f"Page {page_num + 1}:\n{text}")
-                context += f"\n\nPDF content: {'\n\n'.join(pdf_content)}"
+                context += "\n\nPDF content: " + "\n\n".join(pdf_content)
     
     
     
