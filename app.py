@@ -8,19 +8,9 @@ from datetime import datetime
 import uuid
 from text_processor import process_text, process_file  # Import the new functions
 from db_manager import DBManager
+from query_solver import query_solving
 
-# Load environment variables
-load_dotenv()
-
-# Initialize OpenAI client
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
-# Initialize database manager (replaces previous ChromaDB initialization)
-db_manager = DBManager(persist_dir="./vector_db")
-data_collection = db_manager.get_collection("data_store")
-backend_tool_collection = db_manager.get_collection("backend_tool")
-frontend_tool_collection = db_manager.get_collection("frontend_tool")
-
 
 # Set page config
 st.set_page_config(
@@ -187,23 +177,6 @@ if prompt := st.chat_input("Ask me anything..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    # Get relevant context from ChromaDB
-    results = data_collection.query(
-        query_texts=[prompt],
-        n_results=5,
-        include=["documents", "metadatas", "distances"]
-    )
-    
-    # Prepare context for the LLM
-    context_items = []
-    for doc, meta in zip(results['documents'][0], results['metadatas'][0]):
-        source = meta.get('source', 'Unknown')
-        if source == 'file':
-            context_items.append(f"From file '{meta.get('filename', 'Unknown')}': {doc}")
-        else:
-            context_items.append(f"From {source}: {doc}")
-    
-    context = "\n\n".join(context_items)
     
     # Generate response using OpenAI
     with st.chat_message("assistant"):
@@ -215,7 +188,7 @@ if prompt := st.chat_input("Ask me anything..."):
             model="gpt-4o",
             messages=[
                 {"role": "system", "content": "You are a helpful assistant. Use the following context to answer the user's question. If the context is not relevant, use your general knowledge."},
-                {"role": "user", "content": f"Context: {context}\n\nQuestion: {prompt}"}
+                {"role": "user", "content": f"Question: {prompt}"}
             ],
             stream=True,
         ):

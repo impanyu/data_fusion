@@ -4,6 +4,8 @@ from chromadb.utils import embedding_functions
 from chromadb.config import Settings
 import time
 import threading
+from datetime import datetime
+import uuid
 
 class DBManager:
     def __init__(self, persist_dir="./vector_db", sync_interval=300):  # sync every 5 minutes by default
@@ -23,6 +25,7 @@ class DBManager:
             api_key=os.getenv("OPENAI_API_KEY"),
             model_name="text-embedding-ada-002"
         )
+
         
     def create_collection(self, name):
         """Create a new collection"""
@@ -57,3 +60,29 @@ class DBManager:
     def sync_to_disk(self):
         """Force a sync of the database to disk - no longer needed as ChromaDB handles this automatically"""
         pass 
+
+
+    def store_data(self,collection_name, content, metadata= {}):
+        collection = self.get_collection(collection_name)
+
+        # Add common metadata
+        metadata.update({
+            "timestamp": datetime.now().isoformat(),
+            "id": str(uuid.uuid4())
+        })
+        
+        # Store in ChromaDB
+        collection.add(
+            documents=[content],
+            metadatas=[metadata],
+            ids=[metadata["id"]]
+        )
+
+    def query_data(self, collection_name, query, n_results=5):
+        collection = self.get_collection(collection_name)
+        return collection.query(query_texts=[query], n_results=n_results, include=["documents", "metadatas", "distances"])
+    
+    def delete_data(self, collection_name, id):
+        collection = self.get_collection(collection_name)
+        collection.delete(ids=[id])
+
