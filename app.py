@@ -6,10 +6,81 @@ from chromadb.utils import embedding_functions
 import json
 from datetime import datetime
 import uuid
-from text_processor import process_text, process_file  # Import the new functions
-from db_manager import DBManager
-from query_solver import query_solving
 
+from db_manager import DBManager
+import requests
+
+import PyPDF2
+from io import BytesIO
+
+
+db_manager = DBManager()
+def process_file(file):
+        """Process uploaded file and store in vector database and local directory"""
+        try:
+            # Create uploads directory if it doesn't exist
+            upload_dir = "./uploaded_files"
+            os.makedirs(upload_dir, exist_ok=True)
+            
+            # Get base filename and extension
+            original_name = file.name
+            base_name, extension = os.path.splitext(original_name)
+            
+            # Find a unique filename
+            counter = 0
+            file_path = os.path.join(upload_dir, original_name)
+            while os.path.exists(file_path):
+                counter += 1
+                new_name = f"{base_name}_{counter}{extension}"
+                file_path = os.path.join(upload_dir, new_name)
+            
+            # Save the file
+            with open(file_path, "wb") as f:
+                f.write(file.getvalue())
+                
+            # Process content based on file type
+            if file.type.startswith('text/') or file.name.endswith(('.txt', '.csv', '.json')):
+                content = file.getvalue().decode("utf-8")
+            elif file.name.endswith('.pdf'):
+                pdf_content = []
+                pdf_file = BytesIO(file.getvalue())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                
+                for page_num in range(len(pdf_reader.pages)):
+                    page = pdf_reader.pages[page_num]
+                    text = page.extract_text()
+                    if text.strip():
+                        pdf_content.append(f"Page {page_num + 1}:\n{text}")
+                
+                content = "\n\n".join(pdf_content)
+            elif file.type.startswith('image/'):
+                content = f"Binary image file: {file.name}"
+            else:
+                content = f"Binary file: {file.name}"
+            
+            # Create metadata
+            metadata = {
+                "filename": os.path.basename(file_path),
+                "file_type": file.type,
+                "file_size": len(file.getvalue()),
+                "source": "file_upload",
+                "local_path": file_path
+            }
+            
+            # For PDFs, add page count
+            if file.name.endswith('.pdf'):
+                pdf_file = BytesIO(file.getvalue())
+                pdf_reader = PyPDF2.PdfReader(pdf_file)
+                metadata["page_count"] = len(pdf_reader.pages)
+            
+            # Store in vector database
+            
+            db_manager.store_data("data_store", content, metadata)
+            return file_path
+            
+        except Exception as e:
+            return False, str(e)
+        
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 # Set page config
@@ -157,7 +228,7 @@ if st.session_state.get("show_file_upload", False):
     uploaded_files = st.file_uploader("", type=["txt", "image", "csv", "json", "pdf"], accept_multiple_files=True, label_visibility="collapsed")
     if uploaded_files:
         for file in uploaded_files:
-            result = process_file(db_manager, file)
+            result = process_file(file)
             if isinstance(result, tuple):
                 st.error(f"Error processing file: {result[1]}")
             elif result:
@@ -170,14 +241,24 @@ if prompt := st.chat_input("Ask me anything..."):
     # Update current task and summary bar immediately
     st.session_state.current_task = prompt
     update_summary_bar()
+
+    
     
     # Process and store the user's input
-    #process_text(db_manager, prompt, client, file_paths)
+    # call query solver api located at http://localhost:8080/query_solver/
+    try:
+        response = requests.post("http://localhost:8080/query_solver/", json={"prompt": prompt, "file_paths": file_paths})
+        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
+        result = response.json()
+    except (requests.RequestException, ValueError) as e:
+        print(f"Error calling query solver API: {str(e)}")  # For logging
+        full_response = "Sorry, I cannot find an answer"
+        st.error(full_response)
     
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
     
-    
+    '''
     # Generate response using OpenAI
     with st.chat_message("assistant"):
         message_placeholder = st.empty()
@@ -197,7 +278,7 @@ if prompt := st.chat_input("Ask me anything..."):
                 message_placeholder.markdown(full_response + "▌")
         
         message_placeholder.markdown(full_response)
-    
+    '''
     # Add assistant response to chat history
     st.session_state.messages.append({"role": "assistant", "content": full_response})
     

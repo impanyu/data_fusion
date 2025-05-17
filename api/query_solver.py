@@ -59,7 +59,7 @@ class QuerySolver:
         if response_json["complete"] == "True":
             pass
         elif response_json["complete"] == "Tool":
-            tool_result = self.invoke_native_tool(response_json["result"]["tool_name"], response_json["result"]["tool_args"], self.db_manager)
+            tool_result = invoke_native_tool(response_json["result"]["tool_name"], response_json["result"]["tool_args"], self.db_manager)
             response_json["result"] = tool_result
             response_json["complete"] = "True"
         else:
@@ -115,71 +115,7 @@ class QuerySolver:
         )
         return response.choices[0].message.content
 
-    def process_file(self, file):
-        """Process uploaded file and store in vector database and local directory"""
-        try:
-            # Create uploads directory if it doesn't exist
-            upload_dir = "./uploaded_files"
-            os.makedirs(upload_dir, exist_ok=True)
-            
-            # Get base filename and extension
-            original_name = file.name
-            base_name, extension = os.path.splitext(original_name)
-            
-            # Find a unique filename
-            counter = 0
-            file_path = os.path.join(upload_dir, original_name)
-            while os.path.exists(file_path):
-                counter += 1
-                new_name = f"{base_name}_{counter}{extension}"
-                file_path = os.path.join(upload_dir, new_name)
-            
-            # Save the file
-            with open(file_path, "wb") as f:
-                f.write(file.getvalue())
-                
-            # Process content based on file type
-            if file.type.startswith('text/') or file.name.endswith(('.txt', '.csv', '.json')):
-                content = file.getvalue().decode("utf-8")
-            elif file.name.endswith('.pdf'):
-                pdf_content = []
-                pdf_file = BytesIO(file.getvalue())
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                
-                for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    text = page.extract_text()
-                    if text.strip():
-                        pdf_content.append(f"Page {page_num + 1}:\n{text}")
-                
-                content = "\n\n".join(pdf_content)
-            elif file.type.startswith('image/'):
-                content = f"Binary image file: {file.name}"
-            else:
-                content = f"Binary file: {file.name}"
-            
-            # Create metadata
-            metadata = {
-                "filename": os.path.basename(file_path),
-                "file_type": file.type,
-                "file_size": len(file.getvalue()),
-                "source": "file_upload",
-                "local_path": file_path
-            }
-            
-            # For PDFs, add page count
-            if file.name.endswith('.pdf'):
-                pdf_file = BytesIO(file.getvalue())
-                pdf_reader = PyPDF2.PdfReader(pdf_file)
-                metadata["page_count"] = len(pdf_reader.pages)
-            
-            # Store in vector database
-            data_collection = self.db_manager.get_collection("data_store")
-            self.store_data(data_collection, content, "file", metadata)
-            return file_path
-            
-        except Exception as e:
-            return False, str(e)
+    
 
     def interpret_query(self, prompt, context, files=[]):
         """Interpret query and return appropriate response"""
